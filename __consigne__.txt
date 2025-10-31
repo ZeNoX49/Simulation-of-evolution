@@ -1,0 +1,214 @@
+create a grid with hexagon
+make mountain and rivers
+use the those along map position to calculate temperature and precipitation
+then use create biome with
+whitaker biom system
+
+3 ressources :
+ - plantfood -> grow overtime until it reaches a  critical mass
+ - meat -> accumulate as creature dies but decays over time
+ - water -> range from 0 to infinite depending on its proximity to rivers
+
+creature spend their days wandering around base on a priority system that tracks hunger, thirst, love
+hunger and thirst build over time based on a creatur's diet metabolic rate and level of activity
+creature will wait until they reach reproductive maturity and if love is their current priority they'll seek a suitable mate
+
+creature will consumme everything they need from the tile they currently occupy
+if that tile runs out, they'll look at adjacnet tiles, pick one and move on
+creature can not take any action while moving and leave a trail of scents which lasts several turns and can be tracked by both predators and potential mates
+
+each time a creature reproduces there's a 1 in 3 chance of a mutation occuring
+a mutation will cause one stat to move up or down by up to 30%
+the stats than can change are size, speed, rate of reproduction diet, stealth and perception
+
+diet range from -99 to 99
+negative number indicating a preference for plantfood and positive number indicating a preference for meat
+the willingless and likelihood of one creature trying to eat another scale with this rating
+example : if a creature has a diet rating of 87 (mostly carnivore), the first thing it will look for when hungry is meat on the tile it currently occupies, if he find he take need and his great for that turn, however if no meat is available, it will search the tile it currently occupied for eligible prey, if there's no prey, the creature has 2 option:
+    1. the creature can search for meat on adjacent tiles
+    2. if it's available, it can try plantfood
+to decide, the creature will roll a 99-sided, if it rolls a 87 or higher, it'll search for food in an adjacent tile, otherwise t'll check for plantfood and only move on if it's tile is completely barren
+the same logic applies to herbivore but in reverse
+
+from a predator's perspective, stealth is effectively a tool to overcome some physical limitation
+for example, when used in conjunction with their other attributes, stealth enables cast to take down prey that could easily overpower the 'administrative confrontation' (based on size)
+
+from prey's perspective, stealth is a tool to avoid becoming prey
+
+perception is pretty simple : can you find your counterparty berfore they find you
+
+a creature fully invested on carnivorous behavior can take on prey that's twice its size
+an omnivore with an even split of plants and animal could take on prey that's 50% larger
+and so on
+however, a carnivore isn't guaranteed a meal just because it's prey on its tile
+1. first each creature will check to see if it notices the other, this check compares creature :
+    A. perception to creature
+    B. stealth and then rolls to see if creature a notices creature b and the same chack is done by creature b, this role is modified by size, so a samll creature is more likely to notice a large creature than the other way around
+    in practice the entire system look like this :
+    does the predator notice prey ?
+        No : the turn is over and there's no action
+        Yes : does the prey notice predator ?
+            No : the predator attack with an ambush advantage, which basically its attack is twice as powerful
+            Yes : the predator will still attack but without any advantage
+    when an attacks occurs, the prey will roll for evasion if it succeeds, the prey escape and the predator's turn ends without a meal, the roll depends on each creature speed
+    if the prey don't escape, a fight occurs, if the prey win the predator's turn is over and there's no action, else the predator eat the prey
+
+scheme to resume :
+
+Does predator --- YES --→    Does prey    --- YES --→ Attack
+notice prey ?             notice predator ?             │
+     |                           |                      │
+     NO                          NO                     │
+     ↓                           ↓                      ↓
+     No                        Ambush ----------→   Does prey
+   Action                                        evade predator ?
+    ↑                                              │       │
+    └────────────────────── YES ───────────────────┘       NO
+    ↑                                                      ↓
+    └────────────────────── YES ───────────────────     Does prey    --- NO --→ Predator eat
+                                                     win the fight ?              the prey
+
+example code (in C#) :
+private GameObject EvaluateCombat(CreatureData defenderData, AttackState attackState) {
+    float dietModifer = (myData["Diet"] + myData.dietBounds) / 100;
+    float myAttackPower = myData.stats["Size"] * dietModifer;
+
+    if(attackState == AttackState.Ambush) {
+        myAttackPower *= 2;
+    }
+
+    float defenderDietModifier = (defenderData.stats["Diet"] + defenderData.dietBounds)  100;
+    float defenderAttackPower = defenderData.stats["Size"] * defenderDietModifier;
+    float attackPowerTotal = myAttackPower + defenderAttackPower;
+
+    float attackPowerRoll = Random.range(0, attackPowerTotal);
+    if(attackPowerRoll > myAttackPower) {
+        return defenderData.gameObject;
+    }
+    return gameObject;
+}
+
+there's a cost associated with both stealth and perception
+being stealthy reduces a creature's overall movement speed, meaning it takes longer to travel between tiles (this does not affect the spped rating used for combat calculations)
+perception has an energy cost so being highly perceptive means a creature need more food and water
+perception has another impact, a higher perception increase the odds of detecting other creature scent
+
+the simulation run for a number of turn
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+we're implementing a new biome system which is based on the idea of ecological recycling
+we'll only take nutrient cycling and energy flow
+we need ta add aditionnal logic to tiles and creatures
+we'll start with produces which consume energy from the Sun and take nutrinets from the soil
+The produces produces plant waste and feed herbivores which produce both animal watse and meat
+meat is consumed by predators who also produce animal wate and meat
+and meat produces its own kind of waste as well
+all this waste is consumed by decomposer which return nutrients to the soil
+finally, organisms are all moving around and doing stuff which cause energy to leave the system
+
+    Energy              ┌───────────────────────────────────────────┐
+    enters              │                                           │
+      │            Herbivores              ┌────────→  Predators    │
+      │        ┌─→ (consumers) ─────┬─→ Meat ←─┬───── (consumers)   │
+      ↓        │                    │    │     │          │         │
+  Producers   ─┘                    ↓    ↓     ↓          │         │
+(e.g. plants) ───→ Plant waste      Animal waste          │         │
+      ↑                 │                │                │         │
+      │                 ↓                │                │         │
+      │            Decomposers ←─────────┘                │         │
+      │              │     │                              ↓         │
+     Soil ←──────────┘     └──────────────────────── Energy leaves ←┘
+
+to see this action we're going to change the size of plants on tiles based on 2 factors : the current plant mass on the tile and the current rate of regrowth
+plant mass is the total ammount of plants which exists in a tile right now
+rate of regrowth : we take the total number of plant decomposers and the total number of animal decomposers with population being driven by the ammount of available waste and multiply each of these by a biodiversity rating
+for animal, biodiversity is calculated based on the number of unique species that are depositing waste
+for plants, it's just a fonction of how well the ration of plants decomposes reflects the ratio of plant types in a given ecosystem
+
+meat as far more caolories per gram than plant food, which generally means that herbivore need to eat more consistently just to acquire the volume of food required to stay alive
+the more carnivorous a creature is, the more slowly its hunger builds
+rate of decay vary with environment, so rate of decay scale with temperature and precipitation
+the mechanic of getting food work a little differently for plant food and meat
+for plant food, a creature will check the tile it's currently on for each type of plant and will then use it's corresponding rating to determine, whether it's willing to eat that food and how much energy it can derive from that food
+for example, if a creature has grass at a rating of 0.5  there's 50% chance it will try to eat the grass on its current tile, however it will ojnly be able to derive 50% of the available calories contained in that gras, if that's not enough to fill the creature up, it will try the next type of food and so on until it either fils up or run of options
+for meat, the willingless and calculations are the same however predator will take control of whatever they kill so this is not available to other creature in the tile, if they have any leftovers or if a creature just dies from something than predation, then this become scavengeable meat which can be consummed by others
+
+to make this system work, the diet system need a complete rework
+
+
+there are 9 types of plantfood, different biomes have different ratio, these give creature 10 sliders which range from 0 to 1 and they all start a 0.1 (a perfect omnivore), they can move up or down in increments of 0.1, but they must always add up to a total value of one
+the higher the value, the more efficient the creature is with that food type
+
+example (in C#) :
+
+public readonly Dictionnary<string, float> foodEfficiencyRatings = new() {
+    {"algae", 0.0f},
+    {"fruit", 0.2f},
+    {"grass", 0.0f},
+    {"leaves", 0.5f},
+    {"meat", 0.2f},
+    {"nectar", 0.0f},
+    {"pollen", 0.0f},
+    {"sap", 0.0f},
+    {"seeds", 0.0f},
+    {"wood", 0.0f}
+}
+
+private bool CheckForMutation(GameObject newCreature, CreatureDate newData) {
+    int roll = Random.range(1, 101);
+
+    if(roll <= mutationChance) {
+        int amount = Random.range(-maxMutationAmount, maxMutationAmount + 1);
+        MutateStats(newCreature, amount, newData);
+        return true;
+    }
+    retun faslse;
+}
+
+private void MutateStats(GameObject newCreature, int amount, CreatureDate newData) {
+    int index = Random.range(newData.firstMutableIndex, creatureData.Count);
+    KeyValuePair<string, float> pair = creatureData.stats.ElementAt(index);
+
+    newData.UpdateStat(pair.Key, creatureData.stats[pair.Key], mutationAmountPerCent);
+    newData.LogMutation(pair.Key, mutationAmountPerCent, newData.stats[pair.Key]);
+}
+
+public void UpdateStat(string statKey, float startingValue, int percentChangeAsWholeNumber) {
+    if(statKey == "Diet") {
+        float changeAsFraction = percentChangeAsWholeNumber / 100;
+        float mutationAmount = Random.range(0, changeAsFraction);
+
+        dietLogic().alterDiet();
+        dietLogic().alterDiet();
+        dietLogic().alterDiet();
+    }
+    else {
+        float multiplier = (float)(100 + percentChangeAsWholeNumber) / 100;
+        stats[statKey] = startingValue * multiplier;
+    }
+}
+
+public void alterDiet() {
+    List<string> keysThatCanBeIncreased = new();
+    List<string> keysThatCanBeDecreased = new();
+
+    foreach(var pair in foodEfficiencyRatings) {
+        if(pair.Value > 0) {
+            keysThatCanBeDecreased.add(pair.Key);
+        }
+
+        if(pair.Value > 1 ) {
+            keysThatCanBeIncreased.add(pair.Key);
+        }
+    }
+
+    int indexToIncrease = Random.range(0, keysThatCanBeIncreased.Count);
+    int indexToDecrease = Random.range(0, keysThatCanBeDecreased.Count);
+
+    foodEfficiencyRatings[keysThatCanBeIncreased[indexToIncrease]] += 0.1f;
+    foodEfficiencyRatings[keysThatCanBeDecreased[indexToDecrease]] += 0.1f;
+}
