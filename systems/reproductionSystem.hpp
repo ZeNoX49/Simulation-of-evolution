@@ -215,7 +215,7 @@ public:
         const Creature& creature,
         const std::vector<Creature>& allCreatures,
         int searchRadius = 5
-    ) const {
+    ) {
         for (const auto& other : allCreatures) {
             if (!other.isAlive) continue;
             if (other.id == creature.id) continue;

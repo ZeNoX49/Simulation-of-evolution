@@ -139,7 +139,6 @@ for meat, the willingless and calculations are the same however predator will ta
 
 to make this system work, the diet system need a complete rework
 
-
 there are 9 types of plantfood, different biomes have different ratio, these give creature 10 sliders which range from 0 to 1 and they all start a 0.1 (a perfect omnivore), they can move up or down in increments of 0.1, but they must always add up to a total value of one
 the higher the value, the more efficient the creature is with that food type
 

@@ -5,7 +5,7 @@
 
 #include "tile.hpp"
 #include "../game.hpp"
-#include "../util/perlinNoise.hpp"
+#include "../utils/perlinNoise.hpp"
 
 PerlinNoise moistureNoise(game::climate_seed);
 PerlinNoise temperatureNoise(game::climate_seed + 1000);
@@ -15,26 +15,29 @@ float altitudeTempLapse = 6.5f;     // Diminution de température par unité d'a
 float maxRainfall = 325.0f;         // Précipitations maximum (mm/an)
 
 // Calculer la latitude normalisée (0 = équateur, 1 = pôle)
-float getLatitude(float y) {
+float getLatitude(float normalizedY) {
     // Centre = équateur (0), bords = pôles (1)
-    float normalizedY = static_cast<float>(y) / game::map_size;
     return std::abs(normalizedY - 0.5f) * 2.0f;
 }
 
 // Calculer la température en °C
-float compute_temperature(float x, float y, float height) {
-    float latitude = getLatitude(y);
+// gridX et gridY sont les coordonnées de GRILLE (0 à map_size), pas les pixels !
+float compute_temperature(float gridX, float gridY, float height) {
+    // Normaliser les coordonnées
+    float normalizedY = gridY / static_cast<float>(game::map_size);
+    float latitude = getLatitude(normalizedY);
     
     // Température de base selon la latitude (gradient équateur -> pôles)
     float latitudeTemp = baseTemperature - (baseTemperature - poleTemperature) * latitude;
     
-    // Réduction due à l'altitude
-    float altitudeEffect = -height * altitudeTempLapse * 10.0f; // *10 pour scaling
+    // Réduction due à l'altitude (RÉDUITE : seulement pour les très hautes altitudes)
+    float altitudeEffect = -height * altitudeTempLapse * 5.0f;  // Réduit de 10.0f à 5.0f
     
     // Variation locale avec Perlin Noise (±5°C)
+    // Utiliser les coordonnées de grille multipliées par une fréquence
     float noise = temperatureNoise.normalized2D(
-        x * 0.05f, 
-        y * 0.05f, 
+        gridX * 0.5f,  // Fréquence pour la variation locale
+        gridY * 0.5f, 
         3,      // octaves
         0.5f,   // persistence
         2.0f,   // lacunarity
@@ -42,15 +45,13 @@ float compute_temperature(float x, float y, float height) {
     );
     float localVariation = (noise - 0.5f) * 10.0f;
     
-    // Effet saisonnier léger (optionnel, peut être modifié avec un paramètre temps)
-    float seasonalVariation = 0.0f;
-    
-    return latitudeTemp + altitudeEffect + localVariation + seasonalVariation;
+    return latitudeTemp + altitudeEffect + localVariation;
 }
 
 // Calculer les précipitations en mm/an (entre 0 et 325)
-float compute_precipitation(float x, float y, float height, float temperature) {
-    float latitude = getLatitude(y);
+float compute_precipitation(float gridX, float gridY, float height, float temperature) {
+    float normalizedY = gridY / static_cast<float>(game::map_size);
+    float latitude = getLatitude(normalizedY);
     
     // Bandes climatiques (valeurs relatives entre 0 et 1)
     float latitudeRainfall = 0.5f;
@@ -80,8 +81,8 @@ float compute_precipitation(float x, float y, float height, float temperature) {
     
     // Humidité locale avec Perlin Noise
     float moisture = moistureNoise.normalized2D(
-        x * 0.03f,
-        y * 0.03f,
+        gridX * 0.3f,  // Fréquence pour les variations d'humidité
+        gridY * 0.3f,
         4,      // octaves
         0.5f,   // persistence
         2.0f,   // lacunarity
@@ -104,41 +105,50 @@ float compute_precipitation(float x, float y, float height, float temperature) {
     return std::clamp(rainfall, 0.0f, maxRainfall);
 }
 
-Biome define_biome(float x, float y, float height) {
-    float temperature = compute_temperature(x, y, height);
-    float precipitation = compute_precipitation(x, y, height, temperature);
+Biome define_biome(float gridX, float gridY, float height) {
+    float temperature = compute_temperature(gridX, gridY, height);
+    float precipitation = compute_precipitation(gridX, gridY, height, temperature);
     
-    if(temperature >= 20 && precipitation >= 300) {
-        return Biome{"Forêt tropicale humide", sf::Color(14,226,120), temperature, precipitation};
+    // Système de Whitaker simplifié (basé sur le code C#)
+    
+    // Tropical (≥ 20°C)
+    if (temperature >= 20.0f && precipitation >= 300.0f) {
+        return Biome{"Tropical Rainforest", sf::Color(14, 226, 120), temperature, precipitation};
     }
-
-    if(temperature >= 20 && precipitation >= 50) {
-        return Biome{"Savane", sf::Color(255,218,63), temperature, precipitation};
+    else if (temperature >= 20.0f && precipitation > 50.0f) {
+        return Biome{"Tropical Savanna", sf::Color(255, 218, 63), temperature, precipitation};
     }
-
-    if(temperature >= 5 && precipitation >= 200) {
-        return Biome{"Forêt pluviale tempérée", sf::Color(21,203,107), temperature, precipitation};
+    else if (temperature >= 20.0f) {
+        return Biome{"Desert", sf::Color(237, 201, 175), temperature, precipitation};
     }
-
-    if(temperature >= 5 && precipitation >= 100) {
-        return Biome{"Forêt décidue", sf::Color(18,179,92), temperature, precipitation};
+    
+    // Temperate (5-20°C)
+    else if (temperature >= 5.0f && precipitation > 200.0f) {
+        return Biome{"Temperate Rainforest", sf::Color(21, 203, 107), temperature, precipitation};
     }
-
-    if(temperature >= 5 && precipitation >= 25) {
-        return Biome{"Prairie", sf::Color(234,252,52), temperature, precipitation};
+    else if (temperature >= 5.0f && precipitation >= 100.0f) {
+        return Biome{"Temperate Deciduous Forest", sf::Color(18, 179, 92), temperature, precipitation};
     }
-
-    if(temperature >= -5 && precipitation >= 50) {
-        return Biome{"Taïga", sf::Color(22,154,83), temperature, precipitation};
+    else if (temperature >= 5.0f && precipitation >= 25.0f) {
+        return Biome{"Temperate Grassland", sf::Color(234, 252, 52), temperature, precipitation};
     }
-
-    if(temperature >= -5 && precipitation >= 0) {
-        return Biome{"Désert", sf::Color(255,144,165), temperature, precipitation};
+    else if (temperature >= 5.0f) {
+        return Biome{"Desert", sf::Color(255, 144, 165), temperature, precipitation};
     }
-
-    if(temperature >= -30 && precipitation >= 0) {
-        return Biome{"Toundra", sf::Color(175,217,235), temperature, precipitation};
+    
+    // Cold (-5 to 5°C)
+    else if (temperature >= -5.0f && precipitation >= 50.0f) {
+        return Biome{"Boreal Forest (Taiga)", sf::Color(22, 154, 83), temperature, precipitation};
     }
-
-    return Biome{"Polaire", sf::Color(216,227,235), temperature, precipitation};
+    else if (temperature >= -5.0f) {
+        return Biome{"Desert", sf::Color(210, 180, 140), temperature, precipitation};
+    }
+    
+    // Very Cold (< -5°C)
+    else if (temperature >= -30.0f) {
+        return Biome{"Tundra", sf::Color(175, 217, 235), temperature, precipitation};
+    }
+    
+    // Polar (< -30°C)
+    return Biome{"Polar", sf::Color(216, 227, 235), temperature, precipitation};
 }

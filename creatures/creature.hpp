@@ -91,10 +91,21 @@ public:
         targetPosition = target;
         isMoving = true;
         
-        // Calculer le temps de déplacement (affecté par stealth)
-        float baseTime = 1.0f;
+        // Temps de déplacement de base : 3 tours
+        // Modifié par la vitesse : vitesse de base (10) = 3 tours
+        // Ex: vitesse 20 = 1.5 tours, vitesse 5 = 6 tours
+        const float BASE_SPEED = 10.0f;
+        const int BASE_MOVEMENT_TIME = 3;
+        
+        float speedRatio = BASE_SPEED / stats.speed;
+        int baseTime = static_cast<int>(std::ceil(BASE_MOVEMENT_TIME * speedRatio));
+        
+        // Appliquer la pénalité de stealth
         float penalty = stats.getMovementSpeedPenalty();
         movementCooldown = static_cast<int>(std::ceil(baseTime * penalty));
+        
+        // Minimum 1 tour
+        movementCooldown = std::max(1, movementCooldown);
         
         return true;
     }

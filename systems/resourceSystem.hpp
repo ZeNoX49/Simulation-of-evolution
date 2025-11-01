@@ -35,58 +35,61 @@ public:
         tileResources[coord] = resources;
     }
     
-    // Créer des ressources appropriées selon le biome
+    // Créer des ressources appropriées selon le biome (Whitaker simplifié)
     TileResources createResourcesForBiome(const std::string& biomeName, float waterDistance) {
         TileResources resources;
         
-        // Paramètres par défaut
         float capacity = 50.0f;
         float growthRate = 2.0f;
         float waterAvailability = calculateWaterAvailability(waterDistance);
         
-        // Ajuster selon le biome
-        if (biomeName == "Forêt tropicale humide" || biomeName == "Forêt tropicale") {
-            capacity = 150.0f;
-            growthRate = 8.0f;
+        // Biomes selon le système Whitaker simplifié
+        if (biomeName == "Tropical Rainforest") {
+            capacity = 200.0f;
+            growthRate = 10.0f;
         }
-        else if (biomeName == "Savane") {
-            capacity = 80.0f;
-            growthRate = 5.0f;
+        else if (biomeName == "Tropical Savanna") {
+            capacity = 100.0f;
+            growthRate = 6.0f;
         }
-        else if (biomeName == "Forêt pluviale tempérée" || biomeName == "Forêt décidue") {
+        else if (biomeName == "Temperate Rainforest") {
+            capacity = 140.0f;
+            growthRate = 7.0f;
+        }
+        else if (biomeName == "Temperate Deciduous Forest") {
             capacity = 120.0f;
             growthRate = 6.0f;
         }
-        else if (biomeName == "Prairie") {
+        else if (biomeName == "Temperate Grassland") {
             capacity = 100.0f;
             growthRate = 7.0f;
         }
-        else if (biomeName == "Taïga") {
-            capacity = 60.0f;
+        else if (biomeName == "Boreal Forest (Taiga)") {
+            capacity = 80.0f;
             growthRate = 3.0f;
         }
-        else if (biomeName == "Désert chaud" || biomeName == "Désert froid") {
-            capacity = 20.0f;
+        else if (biomeName == "Desert") {
+            capacity = 25.0f;
             growthRate = 1.0f;
         }
-        else if (biomeName == "Toundra") {
-            capacity = 30.0f;
-            growthRate = 1.5f;
+        else if (biomeName == "Tundra") {
+            capacity = 40.0f;
+            growthRate = 2.0f;
         }
-        else if (biomeName == "Polaire") {
+        else if (biomeName == "Polar") {
             capacity = 10.0f;
             growthRate = 0.5f;
         }
-        else if (biomeName == "Aquatique") {
+        else if (biomeName == "Aquatic") {
             capacity = 0.0f;
             growthRate = 0.0f;
-            waterAvailability = INFINITY;  // Eau illimitée
+            waterAvailability = INFINITY;
         }
         
         resources.plantCapacity = capacity;
         resources.plantGrowthRate = growthRate;
         resources.water = waterAvailability;
-        resources.plantFood = capacity * 0.5f;  // Commence à 50%
+        resources.plantFood = capacity * 0.5f;
         
         return resources;
     }
@@ -165,6 +168,15 @@ public:
     bool hasWater(const HexCoord& coord) const {
         const auto* resources = getResources(coord);
         return resources && resources->hasWater();
+    }
+    
+    // Obtenir l'unordered_map des ressources (pour TurnManager)
+    std::unordered_map<HexCoord, TileResources>& getTileResources() {
+        return tileResources;
+    }
+    
+    const std::unordered_map<HexCoord, TileResources>& getTileResources() const {
+        return tileResources;
     }
     
     // Reset toutes les ressources

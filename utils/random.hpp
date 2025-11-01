@@ -2,6 +2,7 @@
 #define RANDOM_HPP
 
 #include <random>
+#include <algorithm>
 #include <ctime>
 
 /**

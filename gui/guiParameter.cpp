@@ -1,6 +1,6 @@
 #include "guiParameter.hpp"
-#include "game.hpp"
-#include "environnement/map.hpp"
+#include "../game.hpp"
+#include "../environment/map.hpp"
 #include <sstream>
 #include <iomanip>
 
@@ -94,7 +94,7 @@ void rightSide(tgui::Gui& gui) {
     
     // Seuil eau
     createSliderWithLabel(gui, "Seuil : ", game::water_threshold, X_BASE, yPos, 
-                         0, 1, 0.025f, 2, []() { createHexmap(); });
+                         0, 1, 0.025f, 3, []() { createHexmap(); });
     yPos += 80;
     
     // Seed eau
