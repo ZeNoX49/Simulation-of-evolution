@@ -67,6 +67,9 @@
         "regex": "cpp",
         "iostream": "cpp",
         "stack": "cpp",
-        "typeindex": "cpp"
+        "typeindex": "cpp",
+        "fstream": "cpp",
+        "*.idl": "cpp",
+        "cinttypes": "cpp"
     }
 }

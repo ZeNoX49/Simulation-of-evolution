@@ -1,13 +1,9 @@
 #include "perlinNoise.hpp"
+#include "mathUtils.hpp"
 
 // Fonction de fade (interpolation lisse)
 double PerlinNoise::fade(double t) {
     return t * t * t * (t * (t * 6 - 15) + 10);
-}
-
-// Interpolation linéaire
-double PerlinNoise::lerp(double t, double a, double b) {
-    return a + t * (b - a);
 }
 
 // Calcul du gradient
@@ -63,16 +59,16 @@ double PerlinNoise::noise(double x, double y, double z) const {
     int BB = permutation[B + 1] + Z;
     
     // Interpoler les résultats
-    return lerp(w,
-        lerp(v,
-            lerp(u, grad(permutation[AA], x, y, z),
+    return MathUtils::lerp(w,
+        MathUtils::lerp(v,
+            MathUtils::lerp(u, grad(permutation[AA], x, y, z),
                    grad(permutation[BA], x - 1, y, z)),
-            lerp(u, grad(permutation[AB], x, y - 1, z),
+            MathUtils::lerp(u, grad(permutation[AB], x, y - 1, z),
                    grad(permutation[BB], x - 1, y - 1, z))),
-        lerp(v,
-            lerp(u, grad(permutation[AA + 1], x, y, z - 1),
+        MathUtils::lerp(v,
+            MathUtils::lerp(u, grad(permutation[AA + 1], x, y, z - 1),
                    grad(permutation[BA + 1], x - 1, y, z - 1)),
-            lerp(u, grad(permutation[AB + 1], x, y - 1, z - 1),
+            MathUtils::lerp(u, grad(permutation[AB + 1], x, y - 1, z - 1),
                    grad(permutation[BB + 1], x - 1, y - 1, z - 1))));
 }
 
@@ -102,22 +98,9 @@ double PerlinNoise::noise2D(double x, double y, int octaves,
     return octaveNoise(x, y, 0.0, octaves, persistence, lacunarity, frequency);
 }
 
-// Version 3D complète
-double PerlinNoise::noise3D(double x, double y, double z, int octaves,
-               double persistence, double lacunarity,
-               double frequency) const {
-    return octaveNoise(x, y, z, octaves, persistence, lacunarity, frequency);
-}
-
 // Obtenir une valeur normalisée entre 0 et 1
 double PerlinNoise::normalized2D(double x, double y, int octaves,
                    double persistence, double lacunarity,
                    double frequency) const {
     return (noise2D(x, y, octaves, persistence, lacunarity, frequency) + 1.0) * 0.5;
-}
-
-double PerlinNoise::normalized3D(double x, double y, double z, int octaves,
-                   double persistence, double lacunarity,
-                   double frequency) const {
-    return (noise3D(x, y, z, octaves, persistence, lacunarity, frequency) + 1.0) * 0.5;
 }

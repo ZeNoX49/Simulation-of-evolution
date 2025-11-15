@@ -16,9 +16,6 @@ private:
     // Fonction de fade (interpolation lisse)
     static double fade(double t);
     
-    // Interpolation linéaire
-    static double lerp(double t, double a, double b);
-    
     // Calcul du gradient
     static double grad(int hash, double x, double y, double z);
     
@@ -39,17 +36,8 @@ public:
                    double persistence = 0.5, double lacunarity = 2.0, 
                    double frequency = 1.0) const;
     
-    // Version 3D complète
-    double noise3D(double x, double y, double z, int octaves = 1,
-                   double persistence = 0.5, double lacunarity = 2.0,
-                   double frequency = 1.0) const;
-    
     // Obtenir une valeur normalisée entre 0 et 1
     double normalized2D(double x, double y, int octaves = 1,
-                       double persistence = 0.5, double lacunarity = 2.0,
-                       double frequency = 1.0) const;
-    
-    double normalized3D(double x, double y, double z, int octaves = 1,
                        double persistence = 0.5, double lacunarity = 2.0,
                        double frequency = 1.0) const;
 };

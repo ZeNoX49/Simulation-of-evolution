@@ -2,26 +2,47 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Build SFML",
+      "label": "Build OpenGL",
       "type": "shell",
       "command": "g++",
       "args": [
         "main.cpp",
-        "environment/hexCoord.cpp",
+        "events.cpp",
+        "environment/Biome.cpp",
         "environment/map.cpp",
-        "environment/tile.cpp",
-        "gui/guiParameter.cpp",
+        "environment/Tile.cpp",
+        "rendering/Camera.cpp",
+        "rendering/graphicUtils.cpp",
+        "rendering/tileModel.cpp",
+        "rendering/guiParameter.cpp",
         "utils/perlinNoise.cpp",
-        "utils/random.cpp",
+
+        // Fichiers ImGui à compiler :
+        "C:/Users/totot/Documents/Programmation/C++/__lib__/imgui/imgui.cpp",
+        "C:/Users/totot/Documents/Programmation/C++/__lib__/imgui/imgui_draw.cpp",
+        "C:/Users/totot/Documents/Programmation/C++/__lib__/imgui/imgui_widgets.cpp",
+        "C:/Users/totot/Documents/Programmation/C++/__lib__/imgui/imgui_tables.cpp",
+        "C:/Users/totot/Documents/Programmation/C++/__lib__/imgui/backends/imgui_impl_glfw.cpp",
+        "C:/Users/totot/Documents/Programmation/C++/__lib__/imgui/backends/imgui_impl_opengl3.cpp",
+
+        // glad
+        "C:/Users/totot/Documents/Programmation/C++/__lib__/glad/src/glad.c",
+
         "-std=c++20",
-        "-IC:/Users/totot/Documents/Programmation/C++/__lib__/SFML-3.0.2/include",
-        "-IC:/Users/totot/Documents/Programmation/C++/__lib__/TGUI-1.11/include",
-        "-LC:/Users/totot/Documents/Programmation/C++/__lib__/SFML-3.0.2/lib",
-        "-LC:/Users/totot/Documents/Programmation/C++/__lib__/TGUI-1.11/lib",
-        "-lsfml-graphics",
-        "-lsfml-window",
-        "-lsfml-system",
-        "-ltgui",
+
+        // Include
+        "-IC:/Users/totot/Documents/Programmation/C++/__lib__/glad/include",
+        "-IC:/Users/totot/Documents/Programmation/C++/__lib__/glm-1.0.2",
+        "-IC:/Users/totot/Documents/Programmation/C++/__lib__/glfw-3.4/include",
+        "-IC:/Users/totot/Documents/Programmation/C++/__lib__/imgui",
+        "-IC:/Users/totot/Documents/Programmation/C++/__lib__/imgui/backends",
+
+        // Link
+        "-LC:/Users/totot/Documents/Programmation/C++/__lib__/glfw-3.4/lib-mingw-w64",
+        "-lglfw3",
+        "-lopengl32",
+        "-lgdi32",
+
         "-o",
         "__exe__/simulation.exe"
       ],

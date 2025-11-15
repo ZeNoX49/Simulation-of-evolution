@@ -4,8 +4,11 @@
       "name": "Win32",
       "includePath": [
         "${workspaceFolder}/**",
-        "C:/Users/totot/Documents/Programmation/C++/__lib__/SFML-3.0.2/include",
-        "C:/Users/totot/Documents/Programmation/C++/__lib__/TGUI-1.11/include"
+        "C:/Users/totot/Documents/Programmation/C++/__lib__/glad/include",
+        "C:/Users/totot/Documents/Programmation/C++/__lib__/glm-1.0.2",
+        "C:/Users/totot/Documents/Programmation/C++/__lib__/glfw-3.4/include",
+        "C:/Users/totot/Documents/Programmation/C++/__lib__/imgui",
+        "C:/Users/totot/Documents/Programmation/C++/__lib__/imgui/backends"
       ],
       "defines": [
         "_DEBUG",

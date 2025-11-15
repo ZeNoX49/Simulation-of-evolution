@@ -1,9 +1,25 @@
+#pragma once
+
 #include <string>
-#include <SFML/Graphics/Color.hpp>
+#include <glm/glm.hpp>
+
+enum class BiomeType : int {
+    Water,
+    Tropical_Rainforest,
+    Tropical_Savanna,
+    Temperate_Rainforest,
+    Temperate_Deciduous_Forest,
+    Temperate_Grassland,
+    Taiga,
+    Desert,
+    Tundra,
+    Polar,
+};
 
 struct Biome {
+    BiomeType biomeType;
     std::string name;
-    sf::Color color;
-    float temperature;
-    float precipitation;
+    glm::vec3 color;
 };
+
+Biome getBiome(BiomeType biomeType);

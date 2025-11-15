@@ -2,14 +2,15 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run SFML Simulation",
+   
+      "name": "Run OpenGL Simulation",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/__exe__/simulation.exe",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
-      "preLaunchTask": "Build SFML",
+      "preLaunchTask": "Build OpenGL",
       "externalConsole": true,
       "MIMode": "gdb",
       "miDebuggerPath": "C:/msys64/usr/bin/gdb.exe"
