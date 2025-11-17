@@ -1,106 +1,68 @@
-#include "perlinNoise.hpp"
+#include "PerlinNoise.hpp"
 #include "mathUtils.hpp"
 
-// Fonction de fade (interpolation lisse)
-double PerlinNoise::fade(double t) {
-    return t * t * t * (t * (t * 6 - 15) + 10);
+PerlinNoise::PerlinNoise(int seed)
+    : m_seed(seed) {}
+
+void PerlinNoise::setSeed(int seed) {
+    m_seed = seed;
 }
 
-// Calcul du gradient
-double PerlinNoise::grad(int hash, double x, double y, double z) {
-    int h = hash & 15;
-    double u = h < 8 ? x : y;
-    double v = h < 4 ? y : h == 12 || h == 14 ? x : z;
-    return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
+double PerlinNoise::seededRandom(int x, int y) const {
+    double n = std::sin(x * 12.9898 + y * 78.233 + m_seed * 43758.5453) * 43758.5453;
+    return n - std::floor(n);
 }
 
-// Constructeur avec seed
-PerlinNoise::PerlinNoise(unsigned int seed) {
-    permutation.resize(512);
-    
-    // Remplir avec les valeurs 0-255
-    std::vector<int> p(256);
-    std::iota(p.begin(), p.end(), 0);
-    
-    // Mélanger avec la seed
-    std::default_random_engine engine(seed);
-    std::shuffle(p.begin(), p.end(), engine);
-    
-    // Dupliquer pour éviter les débordements
-    for (int i = 0; i < 256; i++) {
-        permutation[i] = p[i];
-        permutation[256 + i] = p[i];
-    }
+double PerlinNoise::smoothstep(double t) const {
+    return t * t * (3.0 - 2.0 * t);
 }
 
-// Bruit Perlin de base (1 octave)
-double PerlinNoise::noise(double x, double y, double z) const {
-    // Trouver le cube unitaire contenant le point
-    int X = static_cast<int>(std::floor(x)) & 255;
-    int Y = static_cast<int>(std::floor(y)) & 255;
-    int Z = static_cast<int>(std::floor(z)) & 255;
+double PerlinNoise::noise(double x, double y) const {
+    // Coordonnées entières
+    int xi = static_cast<int>(std::floor(x));
+    int yi = static_cast<int>(std::floor(y));
     
-    // Position relative dans le cube
-    x -= std::floor(x);
-    y -= std::floor(y);
-    z -= std::floor(z);
+    // Partie fractionnaire
+    double xf = x - xi;
+    double yf = y - yi;
     
-    // Calculer les courbes de fade
-    double u = fade(x);
-    double v = fade(y);
-    double w = fade(z);
+    // Lissage des coordonnées
+    double u = smoothstep(xf);
+    double v = smoothstep(yf);
     
-    // Hash des 8 coins du cube
-    int A = permutation[X] + Y;
-    int AA = permutation[A] + Z;
-    int AB = permutation[A + 1] + Z;
-    int B = permutation[X + 1] + Y;
-    int BA = permutation[B] + Z;
-    int BB = permutation[B + 1] + Z;
+    // Valeurs aléatoires aux 4 coins
+    double aa = seededRandom(xi,     yi);
+    double ab = seededRandom(xi,     yi + 1);
+    double ba = seededRandom(xi + 1, yi);
+    double bb = seededRandom(xi + 1, yi + 1);
     
-    // Interpoler les résultats
-    return MathUtils::lerp(w,
-        MathUtils::lerp(v,
-            MathUtils::lerp(u, grad(permutation[AA], x, y, z),
-                   grad(permutation[BA], x - 1, y, z)),
-            MathUtils::lerp(u, grad(permutation[AB], x, y - 1, z),
-                   grad(permutation[BB], x - 1, y - 1, z))),
-        MathUtils::lerp(v,
-            MathUtils::lerp(u, grad(permutation[AA + 1], x, y, z - 1),
-                   grad(permutation[BA + 1], x - 1, y, z - 1)),
-            MathUtils::lerp(u, grad(permutation[AB + 1], x, y - 1, z - 1),
-                   grad(permutation[BB + 1], x - 1, y - 1, z - 1))));
+    // Interpolation bilinéaire
+    double x1 = MathUtils::lerp(aa, ba, u);
+    double x2 = MathUtils::lerp(ab, bb, u);
+    
+    return MathUtils::lerp(x1, x2, v);
 }
 
-// Bruit avec octaves multiples (fractal)
-double PerlinNoise::octaveNoise(double x, double y, double z, 
-                  int octaves, double persistence, 
-                  double lacunarity, double frequency) const {
+double PerlinNoise::fractalNoise(double x, double y, int octaves, 
+                                 double persistence, double lacunarity) const
+{
     double total = 0.0;
+    double frequency = 1.0;
     double amplitude = 1.0;
     double maxValue = 0.0;
-    double freq = frequency;
     
-    for (int i = 0; i < octaves; i++) {
-        total += noise(x * freq, y * freq, z * freq) * amplitude;
+    for (int i = 0; i < octaves; ++i) {
+        // Ajouter cette octave
+        total += noise(x * frequency, y * frequency) * amplitude;
+        
+        // Accumuler la valeur maximale pour normalisation
         maxValue += amplitude;
-        amplitude *= persistence;
-        freq *= lacunarity;
+        
+        // Préparer la prochaine octave
+        amplitude *= persistence;  // Diminuer l'amplitude
+        frequency *= lacunarity;   // Augmenter la fréquence
     }
     
-    return total / maxValue; // Normaliser entre -1 et 1
-}
-
-// Version 2D simplifiée
-double PerlinNoise::noise2D(double x, double y, int octaves, 
-               double persistence, double lacunarity, 
-               double frequency) const {
-    return octaveNoise(x, y, 0.0, octaves, persistence, lacunarity, frequency);
-}
-
-// Obtenir une valeur normalisée entre 0 et 1
-double PerlinNoise::normalized2D(double x, double y, int octaves,
-                   double persistence, double lacunarity,
-                   double frequency) const {
-    return (noise2D(x, y, octaves, persistence, lacunarity, frequency) + 1.0) * 0.5;
+    // Normaliser le résultat entre 0 et 1
+    return total / maxValue;
 }

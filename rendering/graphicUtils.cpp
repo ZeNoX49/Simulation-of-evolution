@@ -1,4 +1,5 @@
 #include "graphicUtils.hpp"
+#include "../configuration.hpp"
 
 #include <glad/glad.h>
 
@@ -34,4 +35,32 @@ void drawObject(ObjData& obj) {
     glBindVertexArray(obj.VAO);
     glDrawElements(GL_TRIANGLES, obj.indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+}
+
+/* -------------------------------------------------------------- */
+
+ObjData createSquare(float height, glm::vec3 color) {
+    ObjData obj;
+    float mult = 50.0f;
+
+    float size = ((conf::game_window_width * 1.1f) / 2.0f) / mult;
+
+    // Centre du carré
+    float center = (conf::game_window_width / 2.0f) / mult;
+
+    obj.vertices = {
+        // position                                      normal    uv       color
+        {{center - size, height, center - size}, {0,1,0}, {0,0}, color},
+        {{center + size, height, center - size}, {0,1,0}, {1,0}, color},
+        {{center + size, height, center + size}, {0,1,0}, {1,1}, color},
+        {{center - size, height, center + size}, {0,1,0}, {0,1}, color},
+    };
+
+    obj.indices = {
+        0, 1, 2,
+        2, 3, 0
+    };
+
+    initObject(obj);
+    return obj;
 }

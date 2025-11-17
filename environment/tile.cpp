@@ -4,12 +4,10 @@
 
 #include "Tile.hpp"
 #include "map.hpp"
-#include "../game.hpp"
+#include "../gameParam.hpp"
 #include "../utils/perlinNoise.hpp"
 #include "../utils/mathUtils.hpp"
 
-PerlinNoise moistureNoise(game::climate_seed);
-PerlinNoise temperatureNoise(game::climate_seed + 1000);
 float baseTemperature = 30.0f;      // Température de base à l'équateur (°C)
 float poleTemperature = -40.0f;     // Température aux pôles (°C)
 float altitudeTempLapse = 6.5f;     // Diminution de température par unité d'altitude (°C)
@@ -131,7 +129,7 @@ std::vector<Tile*> Tile::getAllNeighbors() {
 // Calculer la latitude normalisée (0 = équateur, 1 = pôle)
 float Tile::getLatitude() {
     // Normaliser d'abord entre 0 et 1
-    float normalized_y = this->hexCoord.y / static_cast<float>(game::map_size);
+    float normalized_y = this->hexCoord.y / static_cast<float>(gameParam::map_size);
     // Centre = équateur (0), bords = pôles (1)
     return std::abs(normalized_y - 0.5f) * 2.0f;
 }
@@ -148,15 +146,7 @@ float Tile::compute_temperature(int nbAquaticNeighbors) {
     float altitudeEffect = -height * altitudeTempLapse * 5.0f;
     
     // Variation locale avec Perlin Noise (±5°C)
-    float noise = temperatureNoise.normalized2D(
-        this->hexCoord.x * 0.5f,
-        this->hexCoord.y * 0.5f, 
-        3,      // octaves
-        0.5f,   // persistence
-        2.0f,   // lacunarity
-        1.0f    // frequency
-    );
-    float localVariation = (noise - 0.5f) * 10.0f;
+    float localVariation = ((float)rand() / (float)RAND_MAX - 0.5f) * 10.0f;
     
     // Effet modérateur de l'eau (océans modèrent les températures)
     // Plus de voisins aquatiques = température plus modérée
@@ -203,16 +193,6 @@ float Tile::compute_precipitation(int nbAquaticNeighbors) {
     // Effet de l'altitude (plus haut = moins de pluie en général)
     float altitudeEffect = 1.0f - height * 0.3f;
     
-    // Humidité locale avec Perlin Noise
-    float moisture = moistureNoise.normalized2D(
-        this->hexCoord.x * 0.3f,
-        this->hexCoord.y * 0.3f,
-        4,      // octaves
-        0.5f,   // persistence
-        2.0f,   // lacunarity
-        1.0f    // frequency
-    );
-    
     // Les zones froides ont moins d'évaporation donc moins de pluie
     float temperatureEffect = 1.0f;
     if (this->temperature < 0.0f) {
@@ -229,7 +209,7 @@ float Tile::compute_precipitation(int nbAquaticNeighbors) {
     }
     
     // Calcul final (normalisé entre 0 et 1)
-    float normalizedRainfall = latitudeRainfall * altitudeEffect * moisture * temperatureEffect * waterProximityBonus;
+    float normalizedRainfall = latitudeRainfall * altitudeEffect * ((float)rand() / (float)RAND_MAX) * temperatureEffect * waterProximityBonus;
     
     // Mise à l'échelle entre 0 et maxRainfall (325 mm/an)
     float rainfall = normalizedRainfall * maxRainfall;

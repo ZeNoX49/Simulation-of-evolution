@@ -12,7 +12,7 @@
 
 #include "events.hpp"
 #include "configuration.hpp"
-#include "game.hpp"
+#include "gameParam.hpp"
 #include "environment/map.hpp"
 #include "rendering/graphicUtils.hpp"
 #include "rendering/guiParameter.hpp"
@@ -64,6 +64,8 @@ int main() {
     
     initializeMouse(window);
 
+    ObjData maxHeightSquare =  createSquare(1.0f, glm::vec3(150, 150, 150));
+
     // Init ImGui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -95,8 +97,8 @@ int main() {
 
         // Passer les matrices au shader
         glm::mat4 model = glm::mat4(1.0f);
-        glm::mat4 view = game::cam.getViewMatrix();
-        glm::mat4 projection = glm::perspective(glm::radians(game::cam.focalLenth), conf::width_f / conf::height_f, 0.1f, 100.0f);
+        glm::mat4 view = gameCam::cam.getViewMatrix();
+        glm::mat4 projection = glm::perspective(glm::radians(gameCam::cam.focalLenth), conf::width_f / conf::height_f, 0.1f, 100.0f);
 
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
@@ -104,6 +106,10 @@ int main() {
 
         for(ObjData tile : map::hexmap_drawable)
             drawObject(tile);
+
+        ObjData waterLevelSquare = createSquare(gameParam::water_threshold, glm::vec3(0, 0, 220));
+        if(gameParam::showWaterLevel) drawObject(waterLevelSquare);
+        if(gameParam::showMaxHeight) drawObject(maxHeightSquare);
 
         // Rendu de l’UI ImGui
         ImGui::Render();
