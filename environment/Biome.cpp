@@ -1,4 +1,4 @@
-#include "biome.hpp"
+#include "Biome.hpp"
 
 Biome getBiome(BiomeType biomeType) {
     if(biomeType == BiomeType::Water) {
