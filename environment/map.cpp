@@ -5,24 +5,18 @@
 #include "../utils/perlinNoise.hpp"
 #include "../environment/hexCoord.hpp"
 #include "../utils/mathUtils.hpp"
+#include "../object/tileModel.hpp"
 
-namespace map {
-    std::unordered_map<HexCoord, Tile> hexmap;
-    std::vector<ObjData> hexmap_drawable;
-    // std::vector<sf::Text> text_drawable;
-    // sf::Font font;
-}
-
+// Multiplier pour mise à l'échelle
 float mult = 50.0f;
-PerlinNoise heightPerlin = PerlinNoise(gameParam::water_seed);
 
-void createHexmap() {
+// Perlin pour hauteur
+PerlinNoise heightPerlin = PerlinNoise(gameParam::map_seed);
+
+void createHexmap(TerrainGenerator& terrainGen) {
     map::hexmap.clear();
     map::hexmap_drawable.clear();
-    // map::hexmap_drawable.setPrimitiveType(sf::PrimitiveType::Triangles);
-    // map::text_drawable.clear();
-
-    // Calcul du radius et des dimensions
+    
     const float totalHeightFactor = 1.0f + (gameParam::map_size - 1) * 0.75f;
     const float h = conf::game_window_height_f / totalHeightFactor;
     const float radius = h / 2.0f;
@@ -32,88 +26,85 @@ void createHexmap() {
     const float offsetX = conf::offsetX + (conf::game_window_width_f - totalWidth) / 2.0f + radius * std::sqrt(3.f) / 2.0f;
     const float offsetY = conf::offsetY + radius;
 
-    // Centrer la caméra
     float centerX = totalWidth / 2.0f / mult;
     float centerZ = ((gameParam::map_size - 1) * (h * 0.75f)) / 2.0f / mult;
-    gameCam::cam.target = glm::vec3(centerX, 0.0f, centerZ);
+    gameUtils::cam.target = glm::vec3(centerX, 0.0f, centerZ);
 
-    /* ----- 1. hauteur et biome d'eau ----- */
-    std::vector<float> noiseSeed;
-    noiseSeed.resize(gameParam::map_size * gameParam::map_size);
-    for(int i = 0; i < gameParam::map_size * gameParam::map_size; i++) noiseSeed[i] = (float)rand() / (float)RAND_MAX;
+    // -------- 1️⃣ INIT HEIGHTMAP RECTANGULAIRE --------
+    terrainGen.width = gameParam::map_size;
+    terrainGen.height = gameParam::map_size;
+    terrainGen.heights.resize(gameParam::map_size * gameParam::map_size);
 
-    try {
-        heightPerlin.setSeed(gameParam::water_seed);
+    heightPerlin.InitPerm(gameParam::map_seed);
 
-        for (int row = 0; row < gameParam::map_size; ++row) {
-            int colsInRow = (row % 2 == 0) ? gameParam::map_size : gameParam::map_size - 1;
+    for (int y = 0; y < gameParam::map_size; ++y) {
+        for (int x = 0; x < gameParam::map_size; ++x) {
 
-            for (int col = 0; col < colsInRow; ++col) {
-                float gridX = static_cast<float>(col) + ((row % 2) ? 0.5f : 0.0f);
-                float gridY = static_cast<float>(row);
+            float gx = x + ((y % 2) ? 0.5f : 0.0f);
+            float gy = y;
 
-                float height = heightPerlin.fractalNoise(
-                    gridX * gameParam::water_frequency,
-                    gridY * gameParam::water_frequency,
-                    gameParam::water_octaves,
-                    gameParam::water_persistence,
-                    gameParam::water_lacunarity
-                );
+            float hval = heightPerlin.FractalNoise(
+                gx * gameParam::map_frequency,
+                gy * gameParam::map_frequency,
+                gameParam::map_octaves,
+                gameParam::map_persistence,
+                gameParam::map_lacunarity
+            );
 
-                Tile tile;
-                HexCoord hc;
-                hc.x = gridX;
-                hc.y = gridY;
-                tile.hexCoord = hc;
-                tile.height = MathUtils::clamp(height, 0.0f, 1.0f);
-                
-                if (tile.height < gameParam::water_threshold) {
-                    tile.setBiomeAquatic();
-                }
-
-                map::hexmap[hc] = tile;
-            }
+            terrainGen.heights[y * gameParam::map_size + x] = MathUtils::clamp(hval, 0.0f, 1.0f);
         }
     }
-    catch(const std::exception& e) {
-        std::printf("\n\n%s\n\n", e.what());
-        return;
-    }
-    
 
-    /* ----- 2. biomes ----- */
+    // -------- 2️⃣ ERROSION + RIVIERES --------
+    terrainGen.ApplyErosion(gameParam::erosion_iterations);
+    terrainGen.ComputeFlowAccumulation();
+    auto rivers = terrainGen.ExtractRivers(gameParam::riverFlowThreshold);
+    terrainGen.CarveRivers(rivers);
+
+    // -------- 3️⃣ CREATION DES HEX - PAS DE TROUS --------
+    for (int row = 0; row < gameParam::map_size; ++row) {
+        int colsInRow = (row % 2 == 0) ? gameParam::map_size : gameParam::map_size - 1;
+
+        for (int col = 0; col < colsInRow; ++col) {
+
+            float gx = col + ((row % 2) ? 0.5f : 0.0f);
+            float gy = row;
+
+            HexCoord hc{gx, gy};
+            Tile tile;
+            tile.hexCoord = hc;
+
+            int index = row * gameParam::map_size + col;
+            tile.height = terrainGen.heights[index];
+            tile.flow = terrainGen.flow[index];
+
+            if (tile.height < gameParam::water_threshold || tile.flow > gameParam::riverFlowThreshold) {
+                tile.setBiomeAquatic();
+            }
+
+            map::hexmap[hc] = tile;
+        }
+    }
+
+    // -------- 4️⃣ BIOMES RESTANTS --------
     for (auto& [hc, tile] : map::hexmap) {
-        if(tile.height >= gameParam::water_threshold) {
-            int nbAquaticNeighbors = 0;
-            for (auto* neighbor : tile.getAllNeighbors()) {
-                if(neighbor && neighbor->height < gameParam::water_threshold) {
-                    nbAquaticNeighbors++;
-                }
+        if (!tile.isWater) {
+            int waterN = 0;
+            for (auto* n : tile.getAllNeighbors()) {
+                if (n && n->isWater) waterN++;
             }
-            tile.define_biome(nbAquaticNeighbors);
+            tile.define_biome(waterN);
         }
     }
 
-    // if (!map::font.openFromFile("C:/Windows/Fonts/arial.ttf")) {
-    //     // Gérer l'erreur si la font ne charge pas
-    //     return;
-    // }
-
-    /* ----- 3. hexagones ----- */
+    // -------- 5️⃣ MODELES HEX --------
     for (int row = 0; row < gameParam::map_size; ++row) {
         int colsInRow = (row % 2 == 0) ? gameParam::map_size : gameParam::map_size - 1;
 
         for (int col = 0; col < colsInRow; ++col) {
             float x = col * w + ((row % 2) ? w / 2.0f : 0.0f);
             float y = row * (h * 0.75f);
-            // sf::Vector2f pos(offsetX + x, offsetY + y);
-
-            float gridX = static_cast<float>(col) + ((row % 2) ? 0.5f : 0.0f);
-            float gridY = static_cast<float>(row);
-
-            HexCoord hc;
-            hc.x = gridX;
-            hc.y = gridY;
+            HexCoord hc{col + ((row % 2) ? 0.5f : 0.0f), (float)row};
             Tile& tile = map::hexmap[hc];
 
             glm::vec3 color;
@@ -122,28 +113,25 @@ void createHexmap() {
             ObjData hex;
 
             switch (gameParam::tile_color) {
-                case 0:   // Biome
-                    color = tile.biome.color;
-                    hex = createTileModel(x/mult, y/mult, tile.height, radius/mult, color);
-                    break;
-
-                case 1:   // Hauteur
-                    c = tile.height;
-                    color = glm::vec3(c, c, c);
-                    hex = createTileModel(x/mult, y/mult, tile.height*5, radius/mult, color);
-                    break;
-
-                case 2:   // Température
-                    c = ((tile.temperature + 40.0f) / 70.0f);
-                    color = glm::vec3(c, c, c);
-                    hex = createTileModel(x/mult, y/mult, c*5, radius/mult, color);
-                    break;
-
-                case 3:   // Précipitation
-                    c = (tile.precipitation / 325.0f);
-                    color = glm::vec3(c, c, c);
-                    hex = createTileModel(x/mult, y/mult, c*5, radius/mult, color);
-                    break;
+            case 0:
+                color = tile.biome.color;
+                hex = createTileModel(x/mult, y/mult, tile.height, radius/mult, color);
+                break;
+            case 1:
+                c = tile.height;
+                color = {c, c, c};
+                hex = createTileModel(x/mult, y/mult, tile.height*5, radius/mult, color);
+                break;
+            case 2:
+                c = (tile.temperature + 40.0f) / 70.0f;
+                color = {c, c, c};
+                hex = createTileModel(x/mult, y/mult, c*5, radius/mult, color);
+                break;
+            case 3:
+                c = tile.precipitation / 325.0f;
+                color = {c, c, c};
+                hex = createTileModel(x/mult, y/mult, c*5, radius/mult, color);
+                break;
             }
 
             initObject(hex);

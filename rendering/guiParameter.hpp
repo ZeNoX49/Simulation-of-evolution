@@ -1,5 +1,5 @@
 #pragma once
 
 void createParameter();
-void leftSide();
-void rightSide();
+void mapParameter();
+void debuggingParameter();

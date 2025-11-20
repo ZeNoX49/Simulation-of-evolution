@@ -1,5 +1,6 @@
 #include <chrono>
 #include <iostream>
+#include <fstream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -64,7 +65,7 @@ int main() {
     
     initializeMouse(window);
 
-    ObjData maxHeightSquare =  createSquare(1.0f, glm::vec3(150, 150, 150));
+    loadResources();
 
     // Init ImGui
     IMGUI_CHECKVERSION();
@@ -75,7 +76,7 @@ int main() {
     ImGui_ImplOpenGL3_Init("#version 330");
     
     // Générer la carte initiale
-    createHexmap();
+    createHexmap(gameUtils::terGen);
 
     while(!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -97,19 +98,29 @@ int main() {
 
         // Passer les matrices au shader
         glm::mat4 model = glm::mat4(1.0f);
-        glm::mat4 view = gameCam::cam.getViewMatrix();
-        glm::mat4 projection = glm::perspective(glm::radians(gameCam::cam.focalLenth), conf::width_f / conf::height_f, 0.1f, 100.0f);
+        glm::mat4 view = gameUtils::cam.getViewMatrix();
+        glm::mat4 projection = glm::perspective(glm::radians(gameUtils::cam.focalLenth), conf::width_f / conf::height_f, 0.1f, 100.0f);
 
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-
-        for(ObjData tile : map::hexmap_drawable)
+        
+        for (ObjData& tile : map::hexmap_drawable) {
             drawObject(tile);
+        }
 
-        ObjData waterLevelSquare = createSquare(gameParam::water_threshold, glm::vec3(0, 0, 220));
-        if(gameParam::showWaterLevel) drawObject(waterLevelSquare);
-        if(gameParam::showMaxHeight) drawObject(maxHeightSquare);
+        if(gameParam::showWaterLevel) {
+            float height = gameParam::water_threshold;
+            if(gameParam::tile_color != 0) height *= 5;
+            ObjData waterLevelSquare = createSquare(height, glm::vec3(0, 0, 220));
+            drawObject(waterLevelSquare);
+        }
+        if(gameParam::showMaxHeight) {
+            float height = 1.0f;
+            if(gameParam::tile_color != 0) height *= 5;
+            ObjData maxHeightSquare = createSquare(height, glm::vec3(150, 150, 150));
+            drawObject(maxHeightSquare);
+        }
 
         // Rendu de l’UI ImGui
         ImGui::Render();
@@ -129,8 +140,8 @@ unsigned int compileShader() {
     // 1. Charger le code source depuis les fichiers
     std::string vertexCode;
     std::string fragmentCode;
-    std::ifstream vShaderFile("shaders/vertex.shader");
-    std::ifstream fShaderFile("shaders/fragment.shader");
+    std::ifstream vShaderFile("shaders/vertex.glsl");
+    std::ifstream fShaderFile("shaders/fragment.glsl");
 
     std::stringstream vShaderStream, fShaderStream;
     vShaderStream << vShaderFile.rdbuf();

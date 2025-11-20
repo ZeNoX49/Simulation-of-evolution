@@ -24,14 +24,16 @@ float movAdd = 1.57f / static_cast<float>(nbRotation);
 float waitingDuration = 0.2f;
 
 void initializeMouse(GLFWwindow* window) {
-    g_cam = &gameCam::cam;
+    g_cam = &gameUtils::cam;
     glfwSetScrollCallback(window, scroll_callback);
 }
 
 void processEvents(GLFWwindow* window) {
     /* ----- quitter ----- */
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        writeData();
         glfwSetWindowShouldClose(window, true);
+    }
 
     /* ----- Mouvement de caméra ----- */
     // durée
@@ -44,19 +46,19 @@ void processEvents(GLFWwindow* window) {
     // mouvement vertical
     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
         if (duration_x > waitingDuration) {
-            gameCam::cam.pitch -= movAdd;
+            gameUtils::cam.pitch -= movAdd;
             last_x = current_x;
-            if(gameCam::cam.pitch < 0.00f) {
-                gameCam::cam.pitch = 0.00f;
+            if(gameUtils::cam.pitch < 0.00f) {
+                gameUtils::cam.pitch = 0.00f;
             }
         }
     }
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
         if (duration_x > waitingDuration) {
-            gameCam::cam.pitch += movAdd;
+            gameUtils::cam.pitch += movAdd;
             last_x = current_x;
-            if(gameCam::cam.pitch > 1.57f) {
-                gameCam::cam.pitch = 1.57f;
+            if(gameUtils::cam.pitch > 1.57f) {
+                gameUtils::cam.pitch = 1.57f;
             }
         }
     }
@@ -64,20 +66,15 @@ void processEvents(GLFWwindow* window) {
     // mouvement horizontal
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
         if(duration_y > waitingDuration) {
-            gameCam::cam.yaw -= movAdd;
+            gameUtils::cam.yaw -= movAdd;
             last_y = current_y;
         }
     }
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
         if(duration_y > waitingDuration) {
-            gameCam::cam.yaw += movAdd;
+            gameUtils::cam.yaw += movAdd;
             last_y = current_y;
         }
-    }
-
-    /* ----- écrire les données ----- */
-    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
-        writeData();
     }
 }
 
@@ -102,12 +99,12 @@ void writeData() {
     }
 
     file << "grid_size = " << gameParam::map_size << "\n"
-         << "seuil = " << gameParam::water_threshold << "\n"
-         << "seed = " << gameParam::water_seed << "\n"
-         << "octaves = " << gameParam::water_octaves << "\n"
-         << "persitence = " << gameParam::water_persistence << "\n"
-         << "lacunarité = " << gameParam::water_lacunarity << "\n"
-         << "fréquence = " << gameParam::water_frequency << "\n\n";
+         << "seed = " << gameParam::map_seed << "\n"
+         << "octaves = " << gameParam::map_octaves << "\n"
+         << "persitence = " << gameParam::map_persistence << "\n"
+         << "lacunarité = " << gameParam::map_lacunarity << "\n"
+         << "fréquence = " << gameParam::map_frequency << "\n\n"
+         << "seuil de l'eau = " << gameParam::water_threshold << "\n";
 
     std::vector<float> height_values;
     std::vector<float> temperature_values;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tileModel.hpp"
+#include "../object/ObjData.hpp"
 
 void initObject(ObjData& obj);
 void drawObject(ObjData& obj);

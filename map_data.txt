@@ -1,25 +1,25 @@
-grid_size = 25
-seuil = 0.122
-seed = 91
+grid_size = 35
+seed = 54
 octaves = 3
-persitence = 1.5
-lacunarité = 0.6
-fréquence = 0.38
+persitence = 1.4
+lacunarité = 2.3
+fréquence = 0.01
 
+seuil de l'eau = 0.25
 Hauteur :
 	- minimum = 0
-	- maximum = 1
-	- moyenne = 0.7
-	- medianne = 0.76
+	- maximum = 0.43
+	- moyenne = 0.15
+	- medianne = 0.14
 
 Température :
 	- minimum = -40
 	- maximum = 30
-	- moyenne = -22.66
-	- medianne = -27.7
+	- moyenne = -9.59
+	- medianne = -10.56
 
 Précipitation :
-	- minimum = 0
-	- maximum = 325
-	- moyenne = 72.77
-	- medianne = 40.11
+	- minimum = 0.09
+	- maximum = 301.8
+	- moyenne = 68.97
+	- medianne = 41.69

@@ -11,9 +11,12 @@
         "environment/Biome.cpp",
         "environment/map.cpp",
         "environment/Tile.cpp",
+        "environment/RiverCarver.cpp",
+        "environment/TerrainGenerator.cpp",
+        "environment/TileClimate.cpp",
+        "object/tileModel.cpp",
         "rendering/Camera.cpp",
         "rendering/graphicUtils.cpp",
-        "rendering/tileModel.cpp",
         "rendering/guiParameter.cpp",
         "utils/perlinNoise.cpp",
 

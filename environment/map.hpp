@@ -7,12 +7,12 @@
 #include "HexCoord.hpp"
 #include "Tile.hpp"
 #include "../rendering/graphicUtils.hpp"
+#include "../object/tileModel.hpp"
+#include "TerrainGenerator.hpp"
 
 namespace map {
-    extern std::unordered_map<HexCoord, Tile> hexmap;
-    extern std::vector<ObjData> hexmap_drawable;
-    // std::vector<sf::Text> text_drawable;
-    // sf::Font font;
+    inline std::unordered_map<HexCoord, Tile> hexmap;
+    inline std::vector<ObjData> hexmap_drawable;
 }
 
-void createHexmap();
+void createHexmap(TerrainGenerator& terrainGen);
