@@ -9,17 +9,18 @@ public :
     float height;
     float temperature;
     float precipitation;
-    Biome biome = getBiome(BiomeType::None);
-
-    void computeClimate(const std::vector<Tile*>& allWaterTiles);
+    bool isWater = false;
+    float flow = 0.0f;
+    Biome biome;
 
     void setBiomeAquatic();
-    void define_biome();
+    void define_biome(int nbAquaticNeighbors);
 
     Tile* getNeighbors(hexNeighbors neighbors);
     std::vector<Tile*> getAllNeighbors();
 
 private :
-    float local_evap(float temp);
-    float getDistToOcean(const std::vector<Tile*>& allWaterTiles);
+    float compute_temperature(int nbAquaticNeighbors);
+    float compute_precipitation(int nbAquaticNeighbors);
+    float getLatitude();
 };
