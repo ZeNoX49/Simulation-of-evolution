@@ -99,23 +99,39 @@ void writeData() {
     }
 
     file << "grid_size = " << gameParam::map_size << "\n"
-         << "seed = " << gameParam::map_seed << "\n"
-         << "octaves = " << gameParam::map_octaves << "\n"
-         << "persitence = " << gameParam::map_persistence << "\n"
-         << "lacunarité = " << gameParam::map_lacunarity << "\n"
-         << "fréquence = " << gameParam::map_frequency << "\n\n"
-         << "seuil de l'eau = " << gameParam::water_threshold << "\n";
+         << "map_seed = " << gameParam::map_seed << "\n"
+         << "map_octaves = " << gameParam::map_octaves << "\n"
+         << "map_persistence = " << gameParam::map_persistence << "\n"
+         << "map_lacunarity = " << gameParam::map_lacunarity << "\n"
+         << "map_frequency = " << gameParam::map_frequency << "\n\n";
 
+    file << "water_threshold = " << gameParam::water_threshold << "\n\n";
+
+    file << "min_temp = " << gameParam::min_temp << "\n"
+         << "max_temp = " << gameParam::max_temp << "\n"
+         << "max_precipitation = " << gameParam::max_precipitation << "\n\n";
+
+    std::unordered_map<std::string, int> biomes;
     std::vector<float> height_values;
     std::vector<float> temperature_values;
     std::vector<float> precipitation_values;
     for (const auto& [hc, tile] : map::hexmap) {
+        std::string biome_name = tile.biome.name;
+        if(biomes.find(biome_name) == biomes.end()) {
+            biomes[biome_name] = 0;
+        }
+        biomes[biome_name]++;
+
         height_values.push_back(tile.height);
         temperature_values.push_back(tile.temperature);
         precipitation_values.push_back(tile.precipitation);
     }
 
-    file << "Hauteur :\n";
+    for (const auto& [name, nb] : biomes) {
+        file << name << " : " << nb << "\n";
+    }
+
+    file << "\nHauteur :\n";
     float height_minimum = *std::min_element(height_values.begin(), height_values.end());
     file << "\t- minimum = " << roundToTwo(height_minimum) << "\n";
     float height_maximum = *std::max_element(height_values.begin(), height_values.end());

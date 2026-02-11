@@ -60,6 +60,9 @@ int main() {
     }
 
     glEnable(GL_DEPTH_TEST); // pour voir cube correctement
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW); // par défaut
 
     unsigned int shaderProgram = compileShader();
     
@@ -76,7 +79,7 @@ int main() {
     ImGui_ImplOpenGL3_Init("#version 330");
     
     // Générer la carte initiale
-    createHexmap(gameUtils::terGen);
+    createHexmap();
 
     while(!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -86,8 +89,6 @@ int main() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-
-        // -- UI PARAMÈTRES IMGUI → Chaque frame ! --
         createParameter();
 
         // Couleur de fond
@@ -112,13 +113,13 @@ int main() {
         if(gameParam::showWaterLevel) {
             float height = gameParam::water_threshold;
             if(gameParam::tile_color != 0) height *= 5;
-            ObjData waterLevelSquare = createSquare(height, glm::vec3(0, 0, 220));
+            ObjData waterLevelSquare = createSquare(height + (1.0f / conf::model_size_div), glm::vec3(0, 0, 220));
             drawObject(waterLevelSquare);
         }
         if(gameParam::showMaxHeight) {
             float height = 1.0f;
             if(gameParam::tile_color != 0) height *= 5;
-            ObjData maxHeightSquare = createSquare(height, glm::vec3(150, 150, 150));
+            ObjData maxHeightSquare = createSquare(height + (1.0f / conf::model_size_div), glm::vec3(150, 150, 150));
             drawObject(maxHeightSquare);
         }
 

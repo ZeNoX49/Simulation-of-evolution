@@ -4,6 +4,8 @@
 #include <glm/glm.hpp>
 
 enum class BiomeType : int {
+    None,
+
     Water,
     Tropical_Rainforest,
     Tropical_Savanna,

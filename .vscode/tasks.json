@@ -11,14 +11,11 @@
         "environment/Biome.cpp",
         "environment/map.cpp",
         "environment/Tile.cpp",
-        "environment/RiverCarver.cpp",
-        "environment/TerrainGenerator.cpp",
-        "environment/TileClimate.cpp",
         "object/tileModel.cpp",
         "rendering/Camera.cpp",
         "rendering/graphicUtils.cpp",
         "rendering/guiParameter.cpp",
-        "utils/perlinNoise.cpp",
+        "utils/Noise.cpp",
 
         // Fichiers ImGui à compiler :
         "C:/Users/totot/Documents/Programmation/C++/__lib__/imgui/imgui.cpp",

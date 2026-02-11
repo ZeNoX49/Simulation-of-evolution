@@ -1,8 +1,60 @@
 create a grid with hexagon
 make mountain and rivers
 use the those along map position to calculate temperature and precipitation
-then use create biome with
-whitaker biom system
+temperature is calculated with altitude and map position
+precipitation is based on temperature and proximity to water (that scale with map size)
+then create biome with whitaker biom system
+
+C# example :
+public static string getBiome(int temperatre, int precipitation, bool aquatic) {
+    if(aquatic) {
+        return "Aquatic";
+    }
+
+    else if(temperatre >= 20) {
+        if(precipitation >= 300) {
+            return "Tropical rainforest";
+        }
+        else if(precipitation >= 50) {
+            return "Tropical savanna";
+        }
+        else {
+            return "desert";
+        }
+    }
+
+    else if(temperatre >= 5) {
+        if(precipitation >= 200) {
+            return "Temperate rainforest";
+        }
+        else if(precipitation >= 100) {
+            return "Temperate deciduous forest";
+        }
+        else if(precipitation >= 25) {
+            return "Temperate grassland";
+        }
+        else {
+            return "desert";
+        }
+    }
+
+    else if(temperatre >= -5) {
+        if(precipitation >= 300) {
+            return "Boreal forest (taiga)";
+        }
+        else if(precipitation >= 50) {
+            return "desert";
+        }
+    }
+
+    else if(temperatre >= -30) {
+        return "Tundra";
+    }
+
+    else {
+        return "Polar";
+    }
+}
 
 3 ressources :
  - plantfood -> grow overtime until it reaches a  critical mass
@@ -10,7 +62,7 @@ whitaker biom system
  - water -> range from 0 to infinite depending on its proximity to rivers
 
 creature spend their days wandering around base on a priority system that tracks hunger, thirst, love
-hunger and thirst build over time based on a creatur's diet metabolic rate and level of activity
+hunger and thirst build over time based on a creature's diet metabolic rate and level of activity
 creature will wait until they reach reproductive maturity and if love is their current priority they'll seek a suitable mate
 
 creature will consumme everything they need from the tile they currently occupy

@@ -20,12 +20,8 @@
 //     const float radius = h / 2.0f;
 //     const float w = std::sqrt(3.f) * radius;
 
-//     const float totalWidth = gameParam::map_size * w;
-//     const float offsetX = conf::offsetX + (conf::game_window_width_f - totalWidth) / 2.0f + radius * std::sqrt(3.f) / 2.0f;
-//     const float offsetY = conf::offsetY + radius;
-
 //     // Centrer la caméra
-//     float centerX = totalWidth / 2.0f / mult;
+//     float centerX = (gameParam::map_size * w) / 2.0f / mult;
 //     float centerZ = ((gameParam::map_size - 1) * (h * 0.75f)) / 2.0f / mult;
 //     gameCam::cam.target = glm::vec3(centerX, 0.0f, centerZ);
 
@@ -87,7 +83,6 @@
 //         for (int col = 0; col < colsInRow; ++col) {
 //             float x = col * w + ((row % 2) ? w / 2.0f : 0.0f);
 //             float y = row * (h * 0.75f);
-//             // sf::Vector2f pos(offsetX + x, offsetY + y);
 
 //             float gridX = static_cast<float>(col) + ((row % 2) ? 0.5f : 0.0f);
 //             float gridY = static_cast<float>(row);

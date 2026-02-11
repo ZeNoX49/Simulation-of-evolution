@@ -8,12 +8,12 @@
 
 namespace MathUtils {
     
-    // Interpolation linéaire
-    inline float lerp(float a, float b, float t) {
-        return a + (b - a) * t;
+    // min <= value <= max ---> par calcul -> Interpolation linéaire
+    inline float lerp(float min, float max, float t) {
+        return min + (max - min) * t;
     }
     
-    // min <= value <= max
+    // min <= value <= max ---> de force
     inline float clamp(float value, float min, float max) {
         return std::max(min, std::min(max, value));
     }

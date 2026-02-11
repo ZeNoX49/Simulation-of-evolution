@@ -1,6 +1,10 @@
 #include "Biome.hpp"
 
 Biome getBiome(BiomeType biomeType) {
+    if(biomeType == BiomeType::None) {
+        return Biome{biomeType, "None -> problème", glm::vec3(25, 25, 25)/255.0f};
+    }
+
     if(biomeType == BiomeType::Water) {
         return Biome{biomeType, "Aquatique", glm::vec3(0, 0, 220)/255.0f};
     }
